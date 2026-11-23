@@ -1,0 +1,471 @@
+/* @Jin 全局视觉基调：深色侧边栏 + 浅色工作区，贴近桌面专业工具风格 */
+:root {
+  --bg: #f4f6fa;
+  --panel: #ffffff;
+  --border: #e2e7f0;
+  --text: #1f2733;
+  --text-sub: #667085;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --danger: #dc2626;
+  --sidebar-bg: #101828;
+  --sidebar-active: #1d2939;
+  --sidebar-text: #cbd5e1;
+  --radius: 10px;
+  --shadow: 0 1px 3px rgba(16, 24, 40, 0.08), 0 1px 2px rgba(16, 24, 40, 0.04);
+  font-family: "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+}
+
+.app {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ========== 侧边栏 ========== */
+.sidebar {
+  width: 248px;
+  flex-shrink: 0;
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 14px;
+}
+
+.brand {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 6px 8px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.brand-logo {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+
+.brand-title {
+  color: #fff;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.brand-sub {
+  font-size: 11px;
+  color: #7d89a0;
+  margin-top: 2px;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 16px;
+  flex: 1;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--sidebar-text);
+  font-size: 13.5px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+.nav-item.active {
+  background: var(--sidebar-active);
+  color: #fff;
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+
+.nav-idx {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.sidebar-footer {
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.runtime-badge {
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  word-break: break-all;
+  line-height: 1.5;
+}
+
+.runtime-ok {
+  background: rgba(22, 163, 74, 0.15);
+  color: #86efac;
+}
+
+.runtime-bad {
+  background: rgba(220, 38, 38, 0.18);
+  color: #fca5a5;
+}
+
+.runtime-unknown {
+  background: rgba(148, 163, 184, 0.15);
+  color: #cbd5e1;
+}
+
+/* ========== 主区域 ========== */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 22px 26px 18px;
+  gap: 14px;
+}
+
+.panel {
+  display: none;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px 22px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.panel.active {
+  display: block;
+}
+
+.panel-head h2 {
+  margin: 0 0 6px;
+  font-size: 18px;
+}
+
+.panel-head p {
+  margin: 0 0 18px;
+  color: var(--text-sub);
+  font-size: 13px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 18px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.field-wide {
+  grid-column: 1 / -1;
+}
+
+.field-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #344054;
+}
+
+.field-label em {
+  color: var(--danger);
+  font-style: normal;
+}
+
+input[type="text"],
+input[type="number"],
+select,
+textarea {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text);
+  background: #fff;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  font-family: inherit;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+}
+
+textarea {
+  resize: vertical;
+}
+
+.input-group {
+  display: flex;
+  gap: 8px;
+}
+
+.input-group input {
+  flex: 1;
+  min-width: 0;
+}
+
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 18px;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.check.small {
+  font-size: 12px;
+  color: var(--text-sub);
+}
+
+.check input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--primary);
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ========== 按钮 ========== */
+.btn {
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+  font-family: inherit;
+}
+
+.btn-browse {
+  background: #fff;
+  border-color: #d0d5dd;
+  color: #344054;
+}
+
+.btn-browse:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+}
+
+.btn-primary:disabled {
+  background: #93b4f5;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: #d0d5dd;
+  color: #475467;
+}
+
+.btn-ghost:hover {
+  background: #f2f4f7;
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background: #b91c1c;
+}
+
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+/* ========== 命令预览条 ========== */
+.command-bar {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.command-preview {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.command-label {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  background: rgba(37, 99, 235, 0.1);
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+#command-text {
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: 12.5px;
+  color: #344054;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 10px;
+  flex: 1;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.command-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ========== 日志控制台 ========== */
+.console-wrap {
+  background: #0b1220;
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  min-height: 160px;
+  flex: 1.15;
+  overflow: hidden;
+}
+
+.console-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.console-head > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.console {
+  margin: 0;
+  padding: 12px 14px;
+  overflow: auto;
+  flex: 1;
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: #d1d9e6;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.log-stderr {
+  color: #fca5a5;
+}
+
+.log-system {
+  color: #7dd3fc;
+}
+
+.log-success {
+  color: #86efac;
+}
+
+/* ========== 设置页运行时卡片 ========== */
+.runtime-card {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-size: 13px;
+  line-height: 1.9;
+  color: #344054;
+  word-break: break-all;
+}
+
+.runtime-card .ok {
+  color: #16a34a;
+  font-weight: 700;
+}
+
+.runtime-card .bad {
+  color: var(--danger);
+  font-weight: 700;
+}

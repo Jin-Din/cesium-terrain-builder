@@ -1,0 +1,16 @@
+# @Jin 依赖与构建产物
+node_modules/
+dist/
+dist-portable/
+src-tauri/target/
+src-tauri/gen/
+
+# @Jin ctb 运行时体积大（含 GDAL DLL 与 gdaldata），不入库；由 prepare-runtime 脚本从 tools 目录同步
+src-tauri/resources/ctb-runtime/
+
+# 编辑器与系统文件
+.vscode/
+.idea/
+*.suo
+Thumbs.db
+.DS_Store

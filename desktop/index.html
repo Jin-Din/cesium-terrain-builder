@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CTB 地形切片工具</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <!-- @Jin 左侧导航：四个 ctb 命令 + 运行时设置 -->
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-logo">CTB</div>
+          <div>
+            <div class="brand-title">地形切片工具</div>
+            <div class="brand-sub">Cesium Terrain Builder</div>
+          </div>
+        </div>
+        <nav class="nav">
+          <button class="nav-item active" data-panel="tile">
+            <span class="nav-idx">01</span> ctb-tile 瓦片生成
+          </button>
+          <button class="nav-item" data-panel="info">
+            <span class="nav-idx">02</span> ctb-info 瓦片信息
+          </button>
+          <button class="nav-item" data-panel="export">
+            <span class="nav-idx">03</span> ctb-export 导出 GeoTIFF
+          </button>
+          <button class="nav-item" data-panel="extents">
+            <span class="nav-idx">04</span> ctb-extents 覆盖范围
+          </button>
+          <button class="nav-item" data-panel="settings">
+            <span class="nav-idx">05</span> 运行时设置
+          </button>
+        </nav>
+        <div class="sidebar-footer">
+          <div id="runtime-badge" class="runtime-badge runtime-unknown">检测运行时中…</div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <!-- ========== ctb-tile ========== -->
+        <section class="panel active" id="panel-tile">
+          <header class="panel-head">
+            <h2>ctb-tile 地形瓦片生成</h2>
+            <p>将 GDAL 栅格（DEM）切分为 Terrain / Mesh（quantized-mesh）瓦片，并可生成 layer.json。</p>
+          </header>
+
+          <div class="form-grid">
+            <label class="field field-wide">
+              <span class="field-label">输入栅格 GDAL_DATASOURCE <em>*</em></span>
+              <div class="input-group">
+                <input type="text" id="tile-input" placeholder="例如 D:\demdata\srtm.tif（支持 tif/vrt/img 等 GDAL 格式）" />
+                <button class="btn btn-browse" data-pick="tile-input" data-kind="file">浏览</button>
+              </div>
+            </label>
+
+            <label class="field field-wide">
+              <span class="field-label">输出目录 -o / --output-dir <em>*</em></span>
+              <div class="input-group">
+                <input type="text" id="tile-output" placeholder="瓦片输出目录" />
+                <button class="btn btn-browse" data-pick="tile-output" data-kind="dir">浏览</button>
+              </div>
+            </label>
+
+            <label class="field">
+              <span class="field-label">输出格式 -f / --output-format</span>
+              <select id="tile-format">
+                <option value="Mesh" selected>Mesh（quantized-mesh，推荐）</option>
+                <option value="Terrain">Terrain（heightmap-1.0）</option>
+                <option value="JPEG">JPEG（GDAL 影像切片）</option>
+                <option value="PNG">PNG（GDAL 影像切片）</option>
+                <option value="VRT">VRT（GDAL 虚拟栅格，调试用）</option>
+                <option value="__custom__">自定义格式…</option>
+              </select>
+              <input type="text" id="tile-format-custom" class="hidden" placeholder="输入 gdalinfo --formats 中的格式名" />
+            </label>
+
+            <label class="field">
+              <span class="field-label">TMS 剖面 -p / --profile</span>
+              <select id="tile-profile">
+                <option value="geodetic" selected>geodetic（全球经纬，默认）</option>
+                <option value="mercator">mercator（Web 墨卡托）</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span class="field-label">起始层级 -s / --start-zoom</span>
+              <input type="number" id="tile-start" min="0" max="30" placeholder="如 10（高层级）" />
+            </label>
+
+            <label class="field">
+              <span class="field-label">结束层级 -e / --end-zoom</span>
+              <input type="number" id="tile-end" min="0" max="30" placeholder="如 0（须小于起始层级）" />
+            </label>
+
+            <label class="field">
+              <span class="field-label">重采样算法 -r / --resampling-method</span>
+              <select id="tile-resample">
+                <option value="">默认（average）</option>
+                <option value="nearest" selected>nearest（最近邻，DEM 常用）</option>
+                <option value="bilinear">bilinear</option>
+                <option value="cubic">cubic</option>
+                <option value="cubicspline">cubicspline</option>
+                <option value="lanczos">lanczos</option>
+                <option value="average">average</option>
+                <option value="mode">mode</option>
+                <option value="max">max</option>
+                <option value="min">min</option>
+                <option value="med">med</option>
+                <option value="q1">q1</option>
+                <option value="q3">q3</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span class="field-label">线程数 -c / --thread-count</span>
+              <input type="number" id="tile-threads" min="1" max="256" placeholder="默认 = CPU 核数" />
+            </label>
+
+            <label class="field">
+              <span class="field-label">瓦片尺寸 -t / --tile-size</span>
+              <input type="number" id="tile-size" min="16" max="1024" placeholder="Terrain 默认 65，其他 256" />
+            </label>
+
+            <label class="field">
+              <span class="field-label">Mesh 质量系数 -g / --mesh-qfactor</span>
+              <input type="text" id="tile-qfactor" placeholder="默认 1.0，越大质量越低" />
+            </label>
+
+            <label class="field">
+              <span class="field-label">变换误差阈值 -z / --error-threshold</span>
+              <input type="text" id="tile-error" placeholder="默认 0.125（像素单位）" />
+            </label>
+
+            <label class="field">
+              <span class="field-label">Warp 内存上限 -m / --warp-memory（字节）</span>
+              <input type="number" id="tile-warp" min="0" placeholder="GDAL 默认保守值" />
+            </label>
+
+            <label class="field field-wide">
+              <span class="field-label">GDAL 创建选项 -n / --creation-option（每行一条 NAME=VALUE，仅 GDAL 格式有效）</span>
+              <textarea id="tile-creation" rows="2" placeholder="例如&#10;COMPRESS=DEFLATE&#10;TILED=YES"></textarea>
+            </label>
+
+            <div class="field field-wide checkbox-grid">
+              <label class="check"><input type="checkbox" id="tile-layer" /> <span>-l / --layer 仅生成 layer.json 元数据</span></label>
+              <label class="check"><input type="checkbox" id="tile-cesium" checked /> <span>-C / --cesium-friendly 强制补齐根瓦片（CesiumJS 友好）</span></label>
+              <label class="check"><input type="checkbox" id="tile-resume" /> <span>-R / --resume 跳过已存在文件</span></label>
+              <label class="check"><input type="checkbox" id="tile-normals" /> <span>-N / --vertex-normals 写入顶点法线（仅 Mesh）</span></label>
+              <label class="check"><input type="checkbox" id="tile-quiet" /> <span>-q / --quiet 仅输出错误</span></label>
+              <label class="check"><input type="checkbox" id="tile-verbose" /> <span>-v / --verbose 详细日志</span></label>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== ctb-info ========== -->
+        <section class="panel" id="panel-info">
+          <header class="panel-head">
+            <h2>ctb-info 瓦片信息查看</h2>
+            <p>读取 terrain 瓦片的头部信息，主要用于调试。</p>
+          </header>
+          <div class="form-grid">
+            <label class="field field-wide">
+              <span class="field-label">瓦片文件 TERRAIN_FILE <em>*</em></span>
+              <div class="input-group">
+                <input type="text" id="info-input" placeholder="选择 .terrain 瓦片文件" />
+                <button class="btn btn-browse" data-pick="info-input" data-kind="file">浏览</button>
+              </div>
+            </label>
+            <div class="field field-wide checkbox-grid">
+              <label class="check"><input type="checkbox" id="info-heights" /> <span>-e / --show-heights 以 ASCII 栅格输出高程</span></label>
+              <label class="check"><input type="checkbox" id="info-nochild" /> <span>-c / --no-child 隐藏子瓦片信息</span></label>
+              <label class="check"><input type="checkbox" id="info-notype" /> <span>-t / --no-type 隐藏水/陆类型</span></label>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== ctb-export ========== -->
+        <section class="panel" id="panel-export">
+          <header class="panel-head">
+            <h2>ctb-export 导出 GeoTIFF</h2>
+            <p>把单个 terrain 瓦片导出为 GeoTIFF，瓦片坐标需手动指定。</p>
+          </header>
+          <div class="form-grid">
+            <label class="field field-wide">
+              <span class="field-label">输入瓦片 -i / --input-filename <em>*</em></span>
+              <div class="input-group">
+                <input type="text" id="export-input" placeholder="输入 .terrain 文件" />
+                <button class="btn btn-browse" data-pick="export-input" data-kind="file">浏览</button>
+              </div>
+            </label>
+            <label class="field">
+              <span class="field-label">层级 -z / --zoom-level <em>*</em></span>
+              <input type="number" id="export-zoom" min="0" max="30" placeholder="如 10" />
+            </label>
+            <label class="field">
+              <span class="field-label">瓦片 X -x / --tile-x <em>*</em></span>
+              <input type="number" id="export-x" min="0" placeholder="如 842" />
+            </label>
+            <label class="field">
+              <span class="field-label">瓦片 Y -y / --tile-y <em>*</em></span>
+              <input type="number" id="export-y" min="0" placeholder="如 391" />
+            </label>
+            <label class="field field-wide">
+              <span class="field-label">输出文件 -o / --output-filename <em>*</em></span>
+              <div class="input-group">
+                <input type="text" id="export-output" placeholder="输出 .tif 路径" />
+                <button class="btn btn-browse" data-pick="export-output" data-kind="save">另存</button>
+              </div>
+            </label>
+          </div>
+        </section>
+
+        <!-- ========== ctb-extents ========== -->
+        <section class="panel" id="panel-extents">
+          <header class="panel-head">
+            <h2>ctb-extents 覆盖范围输出</h2>
+            <p>按层级输出栅格将产生的瓦片覆盖范围（GeoJSON），用于预估切片范围。</p>
+          </header>
+          <div class="form-grid">
+            <label class="field field-wide">
+              <span class="field-label">输入栅格 GDAL_DATASET <em>*</em></span>
+              <div class="input-group">
+                <input type="text" id="ext-input" placeholder="选择 DEM 栅格" />
+                <button class="btn btn-browse" data-pick="ext-input" data-kind="file">浏览</button>
+              </div>
+            </label>
+            <label class="field field-wide">
+              <span class="field-label">输出目录 -o / --output-dir</span>
+              <div class="input-group">
+                <input type="text" id="ext-output" placeholder="GeoJSON 输出目录，默认当前工作目录" />
+                <button class="btn btn-browse" data-pick="ext-output" data-kind="dir">浏览</button>
+              </div>
+            </label>
+            <label class="field">
+              <span class="field-label">TMS 剖面 -p / --profile</span>
+              <select id="ext-profile">
+                <option value="geodetic" selected>geodetic（默认）</option>
+                <option value="mercator">mercator</option>
+              </select>
+            </label>
+            <label class="field">
+              <span class="field-label">瓦片尺寸 -t / --tile-size</span>
+              <input type="number" id="ext-size" min="16" max="1024" placeholder="默认 65 / 256" />
+            </label>
+            <label class="field">
+              <span class="field-label">起始层级 -s / --start-zoom</span>
+              <input type="number" id="ext-start" min="0" max="30" placeholder="如 10" />
+            </label>
+            <label class="field">
+              <span class="field-label">结束层级 -e / --end-zoom</span>
+              <input type="number" id="ext-end" min="0" max="30" placeholder="如 0" />
+            </label>
+          </div>
+        </section>
+
+        <!-- ========== 设置 ========== -->
+        <section class="panel" id="panel-settings">
+          <header class="panel-head">
+            <h2>运行时设置</h2>
+            <p>指定 ctb 工具目录（需包含 ctb-tile.exe、ctb.dll、gdal202.dll、zlib.dll 与 gdaldata）。</p>
+          </header>
+          <div class="form-grid">
+            <label class="field field-wide">
+              <span class="field-label">ctb 运行时目录</span>
+              <div class="input-group">
+                <input type="text" id="settings-runtime" placeholder="未设置时使用安装包内置 ctb-runtime" />
+                <button class="btn btn-browse" data-pick="settings-runtime" data-kind="dir">浏览</button>
+              </div>
+            </label>
+            <div class="field field-wide">
+              <button class="btn btn-primary" id="settings-save">保存运行时目录</button>
+            </div>
+            <div class="field field-wide">
+              <div class="runtime-card" id="runtime-card">运行时信息加载中…</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- @Jin 命令预览 + 执行控制 -->
+        <section class="command-bar">
+          <div class="command-preview">
+            <span class="command-label">命令预览</span>
+            <code id="command-text">请填写必填参数</code>
+          </div>
+          <div class="command-actions">
+            <button class="btn btn-ghost" id="btn-reset">重置表单</button>
+            <button class="btn btn-danger hidden" id="btn-cancel">取消任务</button>
+            <button class="btn btn-primary" id="btn-run">开始执行</button>
+          </div>
+        </section>
+
+        <!-- @Jin 实时日志控制台，对接 Rust 端 ctb-log / ctb-finish 事件 -->
+        <section class="console-wrap">
+          <div class="console-head">
+            <span>执行日志</span>
+            <div>
+              <label class="check small"><input type="checkbox" id="console-autoscroll" checked /> <span>自动滚动</span></label>
+              <button class="btn btn-ghost btn-sm" id="btn-clear-log">清空</button>
+            </div>
+          </div>
+          <pre id="console" class="console"></pre>
+        </section>
+      </main>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

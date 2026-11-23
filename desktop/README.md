@@ -1,0 +1,108 @@
+# CTB 地形切片桌面端（ctb-desktop）
+
+基于 **Tauri v2 + sidecar 思路** 开发的 Windows 桌面程序，把 Cesium Terrain Builder
+的四个命令行工具（`ctb-tile`、`ctb-info`、`ctb-export`、`ctb-extents`）包装为
+图形界面：命令参数全部变成表单选项，实时生成命令预览，执行过程流式输出日志，
+支持任务取消与运行时目录切换。
+
+## 架构说明
+
+- 前端：原生 HTML / CSS / JavaScript + Vite，不引入重型框架。
+- 后端：Rust（Tauri v2），通过 `std::process::Command` 拉起 ctb 可执行文件，
+  等价于 sidecar 调用；子进程标准输出/错误经 Tauri 事件（`ctb-log` / `ctb-finish`）推送到界面。
+- 运行时：ctb 的 exe、依赖 DLL（`ctb.dll`、`gdal202.dll`、`zlib.dll`）与 `gdaldata`
+  统一放在 `src-tauri/resources/ctb-runtime/`，打包后随安装包分发；
+  启动时自动注入 `GDAL_DATA` 并把工作目录锁定到运行时目录，保证 DLL 正确加载。
+- 运行时目录解析优先级：设置页自定义路径 → 安装包内置 `ctb-runtime` → 开发期工作区回退目录。
+
+## 目录结构
+
+```
+ctb-desktop/
+├─ index.html                  # 四个工具的表单界面
+├─ src/
+│  ├─ main.js                  # 参数拼装、命令预览、事件日志、任务控制
+│  └─ styles.css               # 桌面端样式
+├─ scripts/
+│  └─ prepare-runtime.ps1      # 从 tools 目录同步 ctb 运行时到 resources
+└─ src-tauri/
+   ├─ Cargo.toml
+   ├─ tauri.conf.json          # 打包配置，resources 声明 ctb-runtime
+   ├─ capabilities/default.json
+   ├─ icons/
+   ├─ resources/ctb-runtime/   # git 忽略，由 prepare-runtime.ps1 生成
+   └─ src/
+      ├─ main.rs
+      └─ lib.rs                # sidecar 桥接：进程调度、GDAL_DATA、日志事件、取消
+```
+
+## 开发环境
+
+- Rust（stable，MSVC 工具链，rustup 安装）
+- Node.js 22 + npm
+- Visual Studio 2022 Build Tools（提供 MSVC `link.exe`）
+- WebView2 运行时（Windows 11 自带）
+
+## 开发与打包
+
+```powershell
+# 1. 同步 ctb 运行时（新克隆或 tools 目录更新后执行）
+.\scripts\prepare-runtime.ps1
+# 也可指定来源：
+# .\scripts\prepare-runtime.ps1 -Source E:\terrain\ctb\tools\ctb-cesium-jin
+
+# 2. 安装前端依赖
+npm install
+
+# 3. 生成图标（依据 src-tauri/icons/app-icon.png）
+npm run tauri icon src-tauri/icons/app-icon.png
+
+# 4. 开发调试（热更新界面）
+npm run tauri dev
+
+# 5. 打包 exe 安装包（NSIS / MSI，产物在 src-tauri/target/release/bundle）
+npm run tauri build
+```
+
+## 界面对应的命令参数
+
+- `ctb-tile`：输入/输出、`-f` 格式、`-p` 剖面、`-s/-e` 层级、`-r` 重采样、
+  `-c` 线程、`-t` 瓦片尺寸、`-g` 质量系数、`-z/-m` 变换参数、`-n` 创建选项，
+  以及 `-l -C -R -N -q -v` 开关。
+- `ctb-info`：`-e -c -t` 开关。
+- `ctb-export`：`-i -z -x -y -o`。
+- `ctb-extents`：`-o -p -t -s -e` 加位置参数。
+
+表单内容自动持久化到浏览器本地存储，下次打开保留上次参数；
+底部「命令预览」实时显示等价的完整命令行，可与教程中的手工命令对照。
+
+## 备注
+
+- 同一时间只允许运行一个任务，避免多个 ctb 进程写同一输出目录。
+- 若运行时检测不通过，在「运行时设置」中选择 `tools/ctb-cesium-jin` 目录即可，配置持久化保存。
+- ctb 运行时二进制不入库（体积大），统一由 `prepare-runtime.ps1` 从 `E:\terrain\ctb\tools` 同步。
+
+## 网络受限时的打包排障
+
+Tauri 首次打包需要从 GitHub 下载 NSIS 工具，代理网络下可能出现
+`io: unexpected end of file` 或 TLS 握手失败。两种处理方式：
+
+1. 给 git / 终端配置本机代理（Clash 默认端口示例）：
+   `git config --global http.proxy http://127.0.0.1:7897`，
+   打包前设置 `$env:HTTPS_PROXY='http://127.0.0.1:7897'`，多执行几次
+   `npm run tauri build` 让下载断点续传。
+2. 使用本地工具镜像（本仓库实践验证可行）：
+   用带重试的 curl 先下载 `nsis-3.13.zip` 与 `nsis_tauri_utils.dll`，
+   按 `https/github.com/...` 的目录结构放到静态目录，用
+   `..\repo-analysis\mirror-server.py` 起本地服务，再设置
+   `$env:TAURI_BUNDLER_TOOLS_GITHUB_MIRROR='http://127.0.0.1:8765'` 后打包。
+
+## 交付产物（0.1.0）
+
+| 产物 | 路径 | 说明 |
+| --- | --- | --- |
+| NSIS 安装包 | `E:\terrain\ctb\tools\CTB地形切片工具-0.1.0-setup.exe` | 双击安装，含 ctb-runtime |
+| 免安装便携版 | `E:\terrain\ctb\tools\CTB地形切片工具-0.1.0-portable.zip` | 解压即用，exe 与 ctb-runtime 同级 |
+
+已验证：安装包/便携版均能正常启动窗口；内置 `ctb-tile --version`（0.4.1）、
+`ctb-info` 读取样例瓦片正常，GDAL_DATA 自动注入，DLL 加载无误。
