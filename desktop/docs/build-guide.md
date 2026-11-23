@@ -3,6 +3,11 @@
 本文档介绍如何从源码编译 `ctb-desktop`，并产出三种交付物：NSIS 安装包、
 免安装绿色版、纯命令行（CLI）包。
 
+> 工作目录说明：桌面端源码统一在 cesium-terrain-builder 仓库的
+> `desktop/` 子目录维护，本机路径为
+> `E:\terrain\ctb\source\ctb-source\desktop`（对应云端 `origin/desktop`
+> 分支的 `desktop/` 文件夹）；下文命令均在该目录下执行。
+
 ## 一、环境准备
 
 | 依赖 | 版本要求 | 说明 |
@@ -25,7 +30,7 @@ ctb 的 exe、依赖 DLL（`ctb.dll`、`gdal202.dll`、`zlib.dll`）与 `gdaldat
 不入库（体积大且属二进制依赖），由脚本从 tools 目录同步：
 
 ```powershell
-cd E:\terrain\ctb\ctb-desktop
+cd E:\terrain\ctb\source\ctb-source\desktop
 .\scripts\prepare-runtime.ps1
 # 来源不同时显式指定：
 # .\scripts\prepare-runtime.ps1 -Source E:\terrain\ctb\tools\ctb-cesium-jin
