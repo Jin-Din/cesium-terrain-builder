@@ -116,14 +116,49 @@ Tauri 首次打包需要从 GitHub 下载 NSIS 工具，代理网络下可能出
    `..\repo-analysis\mirror-server.py` 起本地服务，再设置
    `$env:TAURI_BUNDLER_TOOLS_GITHUB_MIRROR='http://127.0.0.1:8765'` 后打包。
 
-## 交付产物（0.1.0）
+## 版本发布（Release）
 
-| 产物 | 路径 | 说明 |
+### 发布渠道
+
+桌面端代码托管在个人云端仓库 `Jin-Din/cesium-terrain-builder` 的 `desktop`
+分支（位于 `desktop/` 目录），正式版本通过 GitHub Release 发布：
+<https://github.com/Jin-Din/cesium-terrain-builder/releases>
+
+### v0.1.0 发布资产
+
+| 资产文件 | 类型 | 说明 |
 | --- | --- | --- |
-| NSIS 安装包 | `E:\terrain\ctb\tools\CTB地形切片工具-0.1.0-setup.exe` | 双击安装，含 ctb-runtime |
-| 免安装绿色版 zip | `E:\terrain\ctb\tools\CTB地形切片工具-0.1.0-绿色版.zip` | 解压即用，顶层 `CTB-Terrain-Tool/` 内 exe 与 ctb-runtime 同级 |
-| 绿色版目录 | `E:\terrain\ctb\tools\CTB-Terrain-Tool\` | 与 zip 内容一致，可直接双击 exe 调试运行 |
+| `CTB地形切片工具-0.1.0-setup.exe` | NSIS 安装包（约 6 MB） | 双击安装，自动创建开始菜单/桌面快捷方式，含完整 ctb-runtime |
+| `CTB地形切片工具-0.1.0-绿色版.zip` | 免安装绿色版（约 8.5 MB） | 解压即用，顶层 `CTB-Terrain-Tool/` 内 exe 与 `ctb-runtime` 同级 |
 
-已验证：安装包/便携版均能正常启动窗口；内置 `ctb-tile --version`（0.4.1）、
-`ctb-info` 读取样例瓦片正常，GDAL_DATA 自动注入，DLL 加载无误；
-中文解压目录下 gdaldata 自动部署到 ProgramData（89 个数据文件 + 部署标记），切片功能正常。
+本机对应产物路径（`E:\terrain\ctb\tools\`）：
+
+- `CTB地形切片工具-0.1.0-setup.exe`：安装包。
+- `CTB地形切片工具-0.1.0-绿色版.zip`：绿色版压缩包。
+- `CTB-Terrain-Tool\`：与绿色版 zip 内容一致的解压目录，可直接双击 exe 运行。
+
+### 安装版与绿色版如何选择
+
+- **安装版**：适合固定办公机，安装后可通过系统「应用和功能」统一卸载升级。
+- **绿色版**：不写注册表、不依赖安装路径，解压到 U 盘或任意目录均可运行，
+  适合受限环境、多机拷贝与免管理员场景；删除目录即完成卸载。
+- 两种形态功能完全一致，均内置 4 个 ctb 工具（`ctb-tile` 0.4.1、`ctb-info`、
+  `ctb-export`、`ctb-extents`）及全部 GDAL 依赖。
+
+### 绿色版使用步骤
+
+1. 解压 `CTB地形切片工具-0.1.0-绿色版.zip`，保持 `ctb-desktop.exe` 与
+   `ctb-runtime` 文件夹同级，不要只单独拷贝 exe。
+2. 双击 `ctb-desktop.exe` 启动；首页显示「运行时就绪：4 个工具」即环境正常。
+3. 在对应工具页填写表单参数，底部可实时查看等价命令行，点击「开始执行」运行。
+4. 若解压目录含中文等非 ASCII 字符，首次启动会自动把 `gdaldata` 部署到
+   `C:\ProgramData\ctb-desktop\gdaldata`（纯英文路径，仅部署一次，可被复用），
+   无需手工干预。
+
+### 发布前验证记录
+
+- 安装版与绿色版均能正常启动窗口，界面渲染完整。
+- 内置 `ctb-tile --version` 输出 0.4.1，`ctb-info` 读取样例瓦片正常。
+- `GDAL_DATA` 自动注入、同目录 DLL 加载无误。
+- 中文解压目录下 gdaldata 自动部署到 ProgramData（89 个数据文件 +
+  `.gdaldata-deployed` 标记），切片坐标系数据加载正常。
