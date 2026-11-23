@@ -126,10 +126,15 @@ Tauri 首次打包需要从 GitHub 下载 NSIS 工具，代理网络下可能出
 
 ### v0.1.0 发布资产
 
-| 资产文件 | 类型 | 说明 |
+| Release 资产文件（英文命名） | 类型 | 说明 |
 | --- | --- | --- |
-| `CTB地形切片工具-0.1.0-setup.exe` | NSIS 安装包（约 6 MB） | 双击安装，自动创建开始菜单/桌面快捷方式，含完整 ctb-runtime |
-| `CTB地形切片工具-0.1.0-绿色版.zip` | 免安装绿色版（约 8.5 MB） | 解压即用，顶层 `CTB-Terrain-Tool/` 内 exe 与 `ctb-runtime` 同级 |
+| `CTB-Terrain-Tool-0.1.0-setup.exe` | NSIS 安装包（约 6 MB） | 双击安装，自动创建开始菜单/桌面快捷方式，含完整 ctb-runtime |
+| `CTB-Terrain-Tool-0.1.0-portable.zip` | 免安装绿色版（约 8.5 MB） | 解压即用，顶层 `CTB-Terrain-Tool/` 内 exe 与 `ctb-runtime` 同级 |
+
+> Release 资产统一使用纯英文文件名，避免中文文件名在浏览器下载、跨系统传输时
+> 出现编码问题；其内容与本机 `E:\terrain\ctb\tools\` 下的中文命名产物完全一致，
+> 对应关系为：`CTB地形切片工具-0.1.0-setup.exe` → `CTB-Terrain-Tool-0.1.0-setup.exe`，
+> `CTB地形切片工具-0.1.0-绿色版.zip` → `CTB-Terrain-Tool-0.1.0-portable.zip`。
 
 本机对应产物路径（`E:\terrain\ctb\tools\`）：
 
@@ -147,7 +152,8 @@ Tauri 首次打包需要从 GitHub 下载 NSIS 工具，代理网络下可能出
 
 ### 绿色版使用步骤
 
-1. 解压 `CTB地形切片工具-0.1.0-绿色版.zip`，保持 `ctb-desktop.exe` 与
+1. 解压绿色版 zip（Release 资产 `CTB-Terrain-Tool-0.1.0-portable.zip`，
+   本机中文名为 `CTB地形切片工具-0.1.0-绿色版.zip`），保持 `ctb-desktop.exe` 与
    `ctb-runtime` 文件夹同级，不要只单独拷贝 exe。
 2. 双击 `ctb-desktop.exe` 启动；首页显示「运行时就绪：4 个工具」即环境正常。
 3. 在对应工具页填写表单参数，底部可实时查看等价命令行，点击「开始执行」运行。
