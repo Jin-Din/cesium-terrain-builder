@@ -68,6 +68,15 @@ npm run tauri dev
 npm run tauri build
 ```
 
+## 文档索引（docs/）
+
+| 文档 | 内容 |
+| --- | --- |
+| `docs/build-guide.md` | 完整编译打包教程：环境准备、运行时同步、NSIS 安装包、绿色版、CLI 包、Release 发布、排障 |
+| `docs/usage-guide.md` | 桌面端 GUI 使用教程：五个页签、切片工作流、表单持久化与常见问题 |
+| `docs/cli-usage.md` | 纯命令行版使用说明（CLI 包内同名文件为 `使用说明.md`）：环境变量、四个工具参数与生产工作流 |
+| `docs/env-setup.bat` | CLI 包一键配置 `GDAL_DATA` 与 `PATH` 的脚本（仅当前 cmd 窗口生效） |
+
 ## 绿色版（免安装）
 
 绿色版不写注册表、不依赖安装路径，解压后保持 exe 与 `ctb-runtime` 同级，
@@ -130,6 +139,7 @@ Tauri 首次打包需要从 GitHub 下载 NSIS 工具，代理网络下可能出
 | --- | --- | --- |
 | `CTB-Terrain-Tool-0.1.0-setup.exe` | NSIS 安装包（约 6 MB） | 双击安装，自动创建开始菜单/桌面快捷方式，含完整 ctb-runtime |
 | `CTB-Terrain-Tool-0.1.0-portable.zip` | 免安装绿色版（约 8.5 MB） | 解压即用，顶层 `CTB-Terrain-Tool/` 内 exe 与 `ctb-runtime` 同级 |
+| `CTB-Terrain-CLI-0.1.0.zip` | 纯命令行版（约 5.7 MB） | 只含 ctb 四件套 + 依赖 DLL + gdaldata，附 `env-setup.bat` 与中文 `使用说明.md`，详见 `docs/cli-usage.md` |
 
 > Release 资产统一使用纯英文文件名，避免中文文件名在浏览器下载、跨系统传输时
 > 出现编码问题；其内容与本机 `E:\terrain\ctb\tools\` 下的中文命名产物完全一致，
@@ -141,6 +151,7 @@ Tauri 首次打包需要从 GitHub 下载 NSIS 工具，代理网络下可能出
 - `CTB地形切片工具-0.1.0-setup.exe`：安装包。
 - `CTB地形切片工具-0.1.0-绿色版.zip`：绿色版压缩包。
 - `CTB-Terrain-Tool\`：与绿色版 zip 内容一致的解压目录，可直接双击 exe 运行。
+- `CTB-Terrain-CLI-0.1.0.zip` / `CTB-Terrain-CLI-0.1.0\`：纯命令行版压缩包与解压目录。
 
 ### 安装版与绿色版如何选择
 
