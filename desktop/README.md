@@ -13,7 +13,11 @@
 - 运行时：ctb 的 exe、依赖 DLL（`ctb.dll`、`gdal202.dll`、`zlib.dll`）与 `gdaldata`
   统一放在 `src-tauri/resources/ctb-runtime/`，打包后随安装包分发；
   启动时自动注入 `GDAL_DATA` 并把工作目录锁定到运行时目录，保证 DLL 正确加载。
-- 运行时目录解析优先级：设置页自定义路径 → 安装包内置 `ctb-runtime` → 开发期工作区回退目录。
+- 运行时目录解析优先级：设置页自定义路径 → exe 同级 `ctb-runtime`（绿色版锚点）→ 安装包内置 `ctb-runtime` → 开发期工作区回退目录。
+- @Jin 中文路径兼容：GDAL 2.2（`gdal202.dll`）无法打开含非 ASCII 字符的 `GDAL_DATA`
+  路径，检测到非 ASCII 运行时路径时自动把 `gdaldata` 部署到
+  `C:\ProgramData\ctb-desktop\gdaldata`（带 `.gdaldata-deployed` 标记，仅部署一次；
+  `LOCALAPPDATA` 为回退），再把该纯英文路径注入子进程环境变量。
 
 ## 目录结构
 
@@ -64,6 +68,21 @@ npm run tauri dev
 npm run tauri build
 ```
 
+## 绿色版（免安装）
+
+绿色版不写注册表、不依赖安装路径，解压后保持 exe 与 `ctb-runtime` 同级，
+拷贝到任意 Windows 机器双击即可运行：
+
+```
+CTB-Terrain-Tool/
+├─ ctb-desktop.exe
+└─ ctb-runtime/          # 4 个 ctb 工具 + ctb/gdal/zlib 依赖 DLL + gdaldata
+```
+
+- 程序启动优先探测 exe 同级 `ctb-runtime` 目录，找不到时才回退到安装包资源与开发目录。
+- 解压目录含中文等非 ASCII 字符时，`gdaldata` 会在首次启动自动部署到 ProgramData
+  下的纯英文路径（见「架构说明」的中文路径兼容），切片坐标系数据加载不受影响。
+
 ## 界面对应的命令参数
 
 - `ctb-tile`：输入/输出、`-f` 格式、`-p` 剖面、`-s/-e` 层级、`-r` 重采样、
@@ -102,7 +121,9 @@ Tauri 首次打包需要从 GitHub 下载 NSIS 工具，代理网络下可能出
 | 产物 | 路径 | 说明 |
 | --- | --- | --- |
 | NSIS 安装包 | `E:\terrain\ctb\tools\CTB地形切片工具-0.1.0-setup.exe` | 双击安装，含 ctb-runtime |
-| 免安装便携版 | `E:\terrain\ctb\tools\CTB地形切片工具-0.1.0-portable.zip` | 解压即用，exe 与 ctb-runtime 同级 |
+| 免安装绿色版 zip | `E:\terrain\ctb\tools\CTB地形切片工具-0.1.0-绿色版.zip` | 解压即用，顶层 `CTB-Terrain-Tool/` 内 exe 与 ctb-runtime 同级 |
+| 绿色版目录 | `E:\terrain\ctb\tools\CTB-Terrain-Tool\` | 与 zip 内容一致，可直接双击 exe 调试运行 |
 
 已验证：安装包/便携版均能正常启动窗口；内置 `ctb-tile --version`（0.4.1）、
-`ctb-info` 读取样例瓦片正常，GDAL_DATA 自动注入，DLL 加载无误。
+`ctb-info` 读取样例瓦片正常，GDAL_DATA 自动注入，DLL 加载无误；
+中文解压目录下 gdaldata 自动部署到 ProgramData（89 个数据文件 + 部署标记），切片功能正常。

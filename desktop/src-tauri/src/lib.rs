@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 use std::fs;
 use std::io::{BufRead, BufReader};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
 
@@ -142,10 +142,55 @@ fn tool_exe_name(tool: &str) -> String {
     }
 }
 
+/// @Jin 递归复制 gdaldata 目录；marker 存在则视为已部署，避免每次启动重复复制
+fn copy_gdaldata(source: &Path, target: &Path) -> std::io::Result<()> {
+    let marker = target.join(".gdaldata-deployed");
+    if marker.exists() {
+        return Ok(());
+    }
+    fs::create_dir_all(target)?;
+    for entry in fs::read_dir(source)? {
+        let entry = entry?;
+        if entry.file_type()?.is_file() {
+            fs::copy(entry.path(), target.join(entry.file_name()))?;
+        }
+    }
+    fs::write(marker, "deployed by ctb-desktop")?;
+    Ok(())
+}
+
+/// @Jin GDAL 2.2（gdal202.dll）在 Windows 上无法打开含非 ASCII 字符的 GDAL_DATA 路径。
+/// 绿色版若被解压到中文目录，切片时坐标系数据会加载失败；
+/// 检测到非 ASCII 路径时自动把 gdaldata 部署到系统级纯英文目录后再返回。
+fn ensure_gdal_data(runtime_dir: &Path) -> PathBuf {
+    let source = runtime_dir.join("gdaldata");
+    if source.as_os_str().to_string_lossy().is_ascii() {
+        return source;
+    }
+
+    // @Jin ProgramData 对普通用户可建子目录且路径恒为 ASCII；LOCALAPPDATA 作为回退
+    let candidates = [
+        std::env::var("PROGRAMDATA")
+            .ok()
+            .map(|value| PathBuf::from(value).join("ctb-desktop").join("gdaldata")),
+        std::env::var("LOCALAPPDATA")
+            .ok()
+            .map(|value| PathBuf::from(value).join("ctb-desktop").join("gdaldata")),
+    ];
+    for target in candidates.into_iter().flatten() {
+        if copy_gdaldata(&source, &target).is_ok() {
+            return target;
+        }
+    }
+    source
+}
+
 #[tauri::command]
 fn get_runtime_info(app: tauri::AppHandle) -> RuntimeInfo {
     let settings = load_settings(&app);
     let runtime_dir = resolve_runtime_dir(&app);
+    // @Jin 设置页展示真实生效的 GDAL_DATA（中文路径时会指向系统 ASCII 部署目录）
+    let effective_gdal_data = ensure_gdal_data(&runtime_dir);
     let tools = CTB_TOOLS
         .iter()
         .map(|name| {
@@ -161,10 +206,7 @@ fn get_runtime_info(app: tauri::AppHandle) -> RuntimeInfo {
 
     RuntimeInfo {
         runtime_dir: runtime_dir.to_string_lossy().to_string(),
-        gdal_data: runtime_dir
-            .join("gdaldata")
-            .to_string_lossy()
-            .to_string(),
+        gdal_data: effective_gdal_data.to_string_lossy().to_string(),
         custom_path: settings.runtime_path,
         tools,
     }
@@ -212,11 +254,13 @@ fn run_job(
     }
 
     // @Jin ctb 依赖同目录的 ctb.dll/gdal202.dll/zlib.dll，因此 cwd 必须锁定运行时目录
+    // @Jin GDAL_DATA 经过 ASCII 路径保障处理，兼容中文解压目录
+    let gdal_data = ensure_gdal_data(&runtime_dir);
     let mut command = Command::new(&exe_path);
     command
         .args(&args)
         .current_dir(&runtime_dir)
-        .env("GDAL_DATA", runtime_dir.join("gdaldata"))
+        .env("GDAL_DATA", gdal_data)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 
